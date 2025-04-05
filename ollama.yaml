@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-deployment-ata
+  namespace: ata
+  labels:
+    app: ollama-ata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-ata
+  template:
+    metadata:
+      labels:
+        app: ollama-ata
+    spec:
+      containers:
+      - name: ollama-ata
+        image: ollama/ollama:0.1.45-rc2
+        ports:
+        - containerPort: 11434
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service-ata
+  namespace: ata
+spec:
+  selector:
+    app: ollama-ata
+  ports: 
+    - protocol: TCP
+      port: 11434
+      targetPort: 11434
+  type: ClusterIP
