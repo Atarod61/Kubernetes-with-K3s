@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Deployment
+metadata:
+  name: hello-go-deployment
+  namespace: ata # Specify the appropriate namespace here
+spec:
+  replicas: 1 # Number of instances to run
+  selector:
+    matchLabels:
+      app: hello-go
+  template:
+    metadata:
+      labels:
+        app: hello-go
+    spec:
+      containers:
+      - name: hello-go
+        image: golang:1.21-alpine # Or a more specific image with dependencies pre-installed
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            echo 'package main; import "fmt"; func main() { fmt.Println("hello") }' > main.go &&
+            go run main.go
+
+---
+# Service definition
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-go-service
+  namespace: ata # Specify the appropriate namespace here
+spec:
+  selector:
+    app: hello-go
+  ports:
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+  type: ClusterIP # Change to NodePort or LoadBalancer if needed
+
+---
+# Ingress definition
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hello-go-ingress
+  namespace: ata # Specify the appropriate namespace here
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: / # Optional: rewrites the URL path to match your service
+spec:
+  rules:
+  - host: ata.jzac.ir # Change this to your actual domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: hello-go-service
+            port:
+              number: 8080
