@@ -1,61 +1,51 @@
 apiVersion: v1
-kind: Deployment
+kind: Pod
 metadata:
-  name: hello-go-deployment
-  namespace: ata # Specify the appropriate namespace here
+  name: hello-web-pod
+  namespace: ata
+  labels:
+    app: hello-web
 spec:
-  replicas: 1 # Number of instances to run
-  selector:
-    matchLabels:
-      app: hello-go
-  template:
-    metadata:
-      labels:
-        app: hello-go
-    spec:
-      containers:
-      - name: hello-go
-        image: golang:1.21-alpine # Or a more specific image with dependencies pre-installed
-        command: ["/bin/sh", "-c"]
-        args:
-          - |
-            echo 'package main; import "fmt"; func main() { fmt.Println("hello") }' > main.go &&
-            go run main.go
-
+  containers:
+  - name: hello-web
+    image: golang:1.21
+    command: ["/bin/sh", "-c"]
+    args:
+      - echo 'package main;import "net/http";func main(){http.HandleFunc("/",func(w http.ResponseWriter,_ *http.Request){w.Write([]byte("Hello Web!"))});http.ListenAndServe(":8080",nil)}' > main.go &&
+        go run main.go
+    ports:
+    - containerPort: 8080
+  restartPolicy: Never
 ---
-# Service definition
 apiVersion: v1
 kind: Service
 metadata:
-  name: hello-go-service
-  namespace: ata # Specify the appropriate namespace here
+  name: hello-web-service
+  namespace: ata
 spec:
   selector:
-    app: hello-go
+    app: hello-web
   ports:
-    - port: 8080
+    - protocol: TCP
+      port: 80
       targetPort: 8080
-      protocol: TCP
-  type: ClusterIP # Change to NodePort or LoadBalancer if needed
-
 ---
-# Ingress definition
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: hello-go-ingress
-  namespace: ata # Specify the appropriate namespace here
+  name: hello-web-ingress
+  namespace: ata
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: / # Optional: rewrites the URL path to match your service
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
   rules:
-  - host: ata.jzac.ir # Change this to your actual domain
+  - host: ata.jzac.ir
     http:
       paths:
       - path: /
         pathType: Prefix
         backend:
           service:
-            name: hello-go-service
+            name: hello-web-service
             port:
-              number: 8080
+              number: 80
