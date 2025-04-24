@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: camunda
+  namespace: ata
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: camunda
+  template:
+    metadata:
+      labels:
+        app: camunda
+    spec:
+      containers:
+      - name: camunda
+        image: camunda/camunda:8.7.1
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: camunda-data
+          mountPath: /camunda/data
+      volumes:
+      - name: camunda-data
+        hostPath:
+          path: /host/path/to/camunda/data
+          type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: camunda
+  namespace: ata
+spec:
+  selector:
+    app: camunda
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: camunda-ingress
+  namespace: ata
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+spec:
+  rules:
+  - host: ata.jzac.ir  # اینجا نام دامنه خود را وارد کنید
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: camunda
+            port:
+              number: 80
