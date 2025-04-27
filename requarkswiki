@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: requarks/wiki
+  namespace: ata
+  labels:
+    app: requarkswiki
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: requarkswiki
+  template:
+    metadata:
+      labels:
+        app: requarkswiki
+    spec:
+      containers:
+        - name: requarkswiki
+          image: requarks/wiki:canary-arm64-2.5.0-dev.398
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: requarkswiki-data
+              mountPath: /var/www/html  # مسیر داخل کانتینر که MediaWiki داده‌ها را ذخیره می‌کند.
+      volumes:
+        - name: requarkswiki-data
+          hostPath:
+            path: /ata/requarkswiki  # مسیر روی هاست که داده‌ها در آن ذخیره می‌شوند.
+            type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: requarkswiki-service
+  namespace: ata
+spec:
+  selector:
+    app: requarkswiki
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3001
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: requarkswiki-ingress
+  namespace: ata
+  annotations:
+     kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+    - host: ata.jzac.ir # دامنه مورد نظر خود را جایگزین کنید.
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: requarkswiki-service
+                port:
+                  number: 80
