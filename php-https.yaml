@@ -48,7 +48,7 @@ metadata:
   name: php-ingress
   namespace: ata
   annotations:
-    kubernetes.io/ingress.class: "nginx"
+   ingressClassName: nginx
 spec:
   tls:
   - hosts:
