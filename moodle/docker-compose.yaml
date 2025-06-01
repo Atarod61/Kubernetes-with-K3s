@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  moodle:
+    image: bitnami/moodle:latest
+    container_name: moodle
+    ports:
+      - "8080:8080"
+    environment:
+      - MOODLE_DATABASE_TYPE=pgsql  # نوع دیتابیس را به PostgreSQL تغییر دهید
+      - MOODLE_DATABASE_HOST=moodle-postgres
+      - MOODLE_DATABASE_PORT_NUMBER=5432
+      - MOODLE_DATABASE_USER=bn_moodle
+      - MOODLE_DATABASE_PASSWORD=mysecurepassword
+      - MOODLE_DATABASE_NAME=bitnami_moodle
+      - MOODLE_USERNAME=admin
+      - MOODLE_PASSWORD=admin123
+      - MOODLE_EMAIL=admin@example.com
+    volumes:
+      - moodle_data:/bitnami/moodle
+    depends_on:
+      - moodle-postgres
+
+  moodle-postgres:
+    image: bitnami/postgresql:latest
+    container_name: moodle-postgres
+    environment:
+      - POSTGRESQL_USERNAME=bn_moodle
+      - POSTGRESQL_PASSWORD=mysecurepassword
+      - POSTGRESQL_DATABASE=bitnami_moodle
+    volumes:
+      - postgres_data:/bitnami/postgresql
+
+volumes:
+  moodle_data:
+  postgres_data:
